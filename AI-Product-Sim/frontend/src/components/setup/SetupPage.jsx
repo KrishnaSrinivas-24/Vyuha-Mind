@@ -141,7 +141,7 @@ export function SetupPage({ onLaunch }) {
               <Cpu size={20} className="text-base" />
             </div>
             <div>
-              <h1 className="font-bold text-lg tracking-tight text-text-main">AI04 ENGINE</h1>
+              <h1 className="font-bold text-lg tracking-tight text-text-main">Vyuha-Mind</h1>
               <p className="font-mono text-[10px] text-text-muted mt-1 tracking-widest uppercase">Agentic Market Simulation</p>
             </div>
           </div>

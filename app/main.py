@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
+from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+import numpy as np
+from fastapi import FastAPI, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from google import genai
@@ -18,11 +21,12 @@ import pdfplumber
 from app.evaluation import evaluate
 from app.input_handler import build_config
 from app.models import EngineStatus, RecommendRequest, SimulateRequest, SimulateResponse, PRDParseResponse
-from app.orchestrator import run_simulation
+from app.orchestrator import run_simulation, run_simulation_with_fixed_market
 from app.recommendation import recommend
 from app.key_manager import key_manager
+from app.utils import LPG_CRISIS_2026, E10_E20_TRANSITION, SCENARIO_DEFAULTS
 
-app = FastAPI(title="Product Strategy Simulator", version="1.0.0")
+app = FastAPI(title="Product Strategy Simulator", version="2.0.0")
 ROOT_DIR = Path(__file__).resolve().parents[1]
 WARROOM_HTML = ROOT_DIR / "warroom-ui.html"
 
@@ -470,3 +474,146 @@ def simulate_diagnostics(payload: SimulateRequest) -> Dict[str, Any]:
             "trends": evaluation.get("trends", {}),
         },
     }
+
+
+# ── March 2026 LPG Crisis Scenario Endpoint ──────────────────────────
+@app.get("/scenarios/lpg-crisis-2026")
+def get_lpg_crisis_scenario() -> Dict[str, Any]:
+    """Return full metadata for the March 2026 South Asian LPG Crisis."""
+    return LPG_CRISIS_2026
+
+
+# ── E10/E20 Fuel Transition Scenario Endpoint ────────────────────────
+@app.get("/scenarios/e10-e20-transition")
+def get_e10_e20_scenario() -> Dict[str, Any]:
+    """Return full metadata for the E10/E20 Fuel Transition Crisis."""
+    return E10_E20_TRANSITION
+
+
+# ── List All Available Scenarios ──────────────────────────────────────
+@app.get("/scenarios")
+def list_scenarios() -> Dict[str, Any]:
+    """Return a list of all available pre-planned stress-test scenarios."""
+    return {
+        "scenarios": [
+            {
+                "id": "lpg_crisis_2026",
+                "name": LPG_CRISIS_2026["name"],
+                "description": LPG_CRISIS_2026["description"],
+                "type": "macro_shock",
+            },
+            {
+                "id": "e10_e20_transition",
+                "name": E10_E20_TRANSITION["name"],
+                "description": E10_E20_TRANSITION["description"],
+                "type": "regulatory_shift",
+            },
+        ]
+    }
+
+
+# ── Monte Carlo Simulation Endpoint ──────────────────────────────────
+@app.post("/simulate/monte-carlo")
+def run_monte_carlo(payload: SimulateRequest, num_runs: int = 200) -> Dict[str, Any]:
+    """Run N rapid micro-simulations with random perturbations (σ=0.01).
+
+    Returns distribution statistics: mean, std, percentiles for the PoS.
+    """
+    try:
+        config = build_config(payload.input.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    num_runs = max(10, min(num_runs, 1000))
+    scores: List[float] = []
+    rng = np.random.default_rng(42)
+
+    # Run the base simulation once to get market context values
+    base_sim = run_simulation(config, num_steps=payload.num_steps)
+    base_market: Dict[str, Any] = {
+        k: base_sim["final_state"][k]
+        for k in [
+            "fuel_price_index", "supply_disruption", "demand_shift",
+            "market_volatility", "price_sensitivity", "market_pressure",
+            "consumer_stress", "feature_score",
+        ]
+    }
+
+    for _ in range(num_runs):
+        perturbed = deepcopy(base_market)
+        for key in perturbed:
+            noise = rng.normal(0, 0.01)
+            perturbed[key] = max(0.0, min(1.0, float(perturbed[key]) + noise))
+        try:
+            state, history = run_simulation_with_fixed_market(
+                deepcopy(config), perturbed, payload.num_steps,
+            )
+            ev = evaluate(state, history)
+            scores.append(float(ev["success_score"]))
+        except Exception:
+            continue
+
+    if not scores:
+        raise HTTPException(status_code=500, detail="All Monte Carlo runs failed")
+
+    arr = np.array(scores)
+    return {
+        "simulation_id": str(uuid4()),
+        "num_runs": len(scores),
+        "mean_score": round(float(arr.mean()), 2),
+        "std_score": round(float(arr.std()), 2),
+        "min_score": round(float(arr.min()), 2),
+        "max_score": round(float(arr.max()), 2),
+        "percentile_5": round(float(np.percentile(arr, 5)), 2),
+        "percentile_25": round(float(np.percentile(arr, 25)), 2),
+        "percentile_50": round(float(np.percentile(arr, 50)), 2),
+        "percentile_75": round(float(np.percentile(arr, 75)), 2),
+        "percentile_95": round(float(np.percentile(arr, 95)), 2),
+        "distribution": [round(float(s), 1) for s in sorted(scores)],
+    }
+
+
+# ── WebSocket: Real-time Simulation Streaming ────────────────────────
+@app.websocket("/ws/simulation")
+async def ws_simulation(ws: WebSocket) -> None:
+    """Stream simulation step-by-step to the frontend in real-time."""
+    await ws.accept()
+    try:
+        raw = await ws.receive_text()
+        payload_dict = json.loads(raw)
+        req = SimulateRequest(**payload_dict)
+        config = build_config(req.input.model_dump())
+
+        sim = run_simulation(config, num_steps=req.num_steps)
+        history = sim.get("history", [])
+        agent_logs = sim.get("agent_logs", [])
+
+        # Stream step-by-step
+        for idx, step_state in enumerate(history):
+            step_log = agent_logs[idx] if idx < len(agent_logs) else {}
+            event = {
+                "type": "step",
+                "step": idx + 1,
+                "total_steps": len(history),
+                "state": step_state,
+                "agent_log": step_log,
+            }
+            await ws.send_json(event)
+            await asyncio.sleep(0.3)  # Simulate real-time cadence
+
+        # Send final results
+        ev = evaluate(sim["final_state"], history)
+        await ws.send_json({
+            "type": "complete",
+            "evaluation": ev,
+            "market_context": sim.get("market_context", {}),
+            "final_state": sim["final_state"],
+            "warnings": sim.get("warnings", []),
+        })
+    except WebSocketDisconnect:
+        pass
+    except Exception as exc:
+        try:
+            await ws.send_json({"type": "error", "message": str(exc)})
+        except Exception:
+            pass

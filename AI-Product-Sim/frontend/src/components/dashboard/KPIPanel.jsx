@@ -6,15 +6,15 @@ import { TrendingUp, TrendingDown } from 'lucide-react';
 function KPICard({ label, value, prefix = '', suffix = '', decimals = 0, trend, danger }) {
   const isDown = trend === 'down';
   return (
-    <div className={`card-sm p-4 flex-1 min-w-0 flex flex-col gap-1 transition-all duration-500 ${danger ? 'border-danger/20' : ''}`}>
-      <span className="text-[11px] font-medium text-text-tertiary tracking-wide uppercase">{label}</span>
+    <div className={`neo-panel p-4 flex-1 min-w-0 flex flex-col gap-1 transition-all duration-500 ${danger ? 'crisis-border' : ''}`}>
+      <span className="text-[11px] font-medium text-text-faint tracking-wide uppercase">{label}</span>
       <div className="flex items-end gap-2">
         <AnimatedNumber
           value={value}
           prefix={prefix}
           suffix={suffix}
           decimals={decimals}
-          className="text-[26px] font-semibold text-text-primary leading-none tracking-tight"
+          className="text-[26px] font-semibold text-text-main leading-none tracking-tight"
         />
         {trend && (
           <span className={`flex items-center gap-0.5 text-[11px] font-medium pb-0.5 ${isDown ? 'text-danger' : 'text-success'}`}>
@@ -27,20 +27,19 @@ function KPICard({ label, value, prefix = '', suffix = '', decimals = 0, trend, 
 }
 
 export function KPIPanel() {
-
   const { kpis, crisisIntensity } = useSimulation();
   const ci = crisisIntensity;
 
   return (
     <div className="flex gap-3 items-stretch">
       {/* PoS Gauge — F-pattern top-left anchor */}
-      <div className="card-sm p-4 flex items-center gap-4 min-w-[190px]">
+      <div className="neo-panel p-4 flex items-center gap-4 min-w-[190px]">
         <ProbabilityGauge value={kpis.pos} size={76} />
         <div>
-          <span className="text-[10px] font-medium text-text-tertiary tracking-wide uppercase block leading-tight">
+          <span className="text-[10px] font-medium text-text-faint tracking-wide uppercase block leading-tight">
             Probability
           </span>
-          <span className="text-[10px] font-medium text-text-tertiary tracking-wide uppercase block leading-tight">
+          <span className="text-[10px] font-medium text-text-faint tracking-wide uppercase block leading-tight">
             of Success
           </span>
         </div>

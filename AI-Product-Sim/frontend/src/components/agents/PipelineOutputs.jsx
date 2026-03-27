@@ -4,8 +4,8 @@ import { Panel } from '../shared/Panel';
 function JsonBlock({ title, value }) {
   return (
     <div className="mb-2 last:mb-0">
-      <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">{title}</div>
-      <pre className="text-[10px] leading-relaxed bg-bg-elevated border border-border rounded-lg p-2 overflow-auto max-h-32 custom-scroll">
+      <div className="text-[10px] uppercase tracking-wider text-text-faint mb-1">{title}</div>
+      <pre className="text-[10px] leading-relaxed bg-surface-raised border border-border rounded-lg p-2 overflow-auto max-h-32 custom-scroll text-text-muted">
         {JSON.stringify(value, null, 2)}
       </pre>
     </div>
@@ -19,8 +19,8 @@ export function PipelineOutputs() {
   return (
     <Panel className="h-full flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[13px] font-semibold text-text-primary">Engine Outputs</h2>
-        <span className="text-[10px] text-text-muted font-mono">6 stages</span>
+        <h2 className="text-[13px] font-semibold text-text-main">Engine Outputs</h2>
+        <span className="text-[10px] text-text-faint font-mono">6 stages</span>
       </div>
 
       {state.loading ? (

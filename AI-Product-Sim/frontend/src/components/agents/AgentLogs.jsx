@@ -3,11 +3,11 @@ import { Panel } from '../shared/Panel';
 import { useEffect, useRef } from 'react';
 
 const TYPE_COLORS = {
-  consumer: '#818CF8',
-  competitor: '#F87171',
-  analyst: '#FBBF24',
-  investor: '#34D399',
-  orchestrator: '#A78BFA',
+  consumer: '#0ea5e9', // sky for consumer
+  competitor: '#ef4444', // red for competitor
+  analyst: '#f59e0b', // amber for analyst
+  investor: '#10b981', // emerald for investor
+  orchestrator: '#06b6d4', // cyan for orchestrator
 };
 
 const TYPE_LABELS = {
@@ -19,11 +19,11 @@ const TYPE_LABELS = {
 };
 
 const SENTIMENT_COLORS = {
-  positive: '#34D399',
-  negative: '#F87171',
-  warning: '#FBBF24',
-  aggressive: '#FB923C',
-  neutral: '#6B72A0',
+  positive: '#059669',
+  negative: '#dc2626',
+  warning: '#d97706',
+  aggressive: '#ea580c',
+  neutral: '#6b7280',
 };
 
 const MODE_LABELS = {
@@ -43,8 +43,8 @@ function ModeBadge({ mode }) {
     <span
       className={`px-1 py-px rounded text-[8px] font-bold tracking-wider uppercase ${
         isAI
-          ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-          : 'bg-white/5 text-text-muted border border-border'
+          ? 'bg-primary/20 text-primary-light border border-primary/30'
+          : 'bg-surface-raised text-text-muted border border-border'
       }`}
     >
       {label}
@@ -71,10 +71,10 @@ function MetaChips({ meta }) {
       {chips.map((chip, i) => (
         <span
           key={i}
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/[0.04] border border-border text-[9px] font-mono"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface/40 border border-border text-[9px] font-mono"
         >
           <span className="text-text-muted">{chip.label}:</span>
-          <span className="text-text-secondary font-semibold">{chip.value}</span>
+          <span className="text-text-main font-semibold">{chip.value}</span>
         </span>
       ))}
     </div>
@@ -95,10 +95,10 @@ export function AgentLogs() {
   return (
     <Panel className="h-full flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[13px] font-semibold text-text-primary">Agent Activity</h2>
-        <span className="text-[11px] text-text-muted font-mono">{logs.length} logs</span>
+        <h2 className="text-[14px] font-bold text-text-main tracking-tight">Agent Activity</h2>
+        <span className="text-[11px] text-text-faint font-mono">{logs.length} logs</span>
       </div>
-      <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scroll space-y-0">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scroll space-y-0 pr-2">
         {logs.length === 0 ? (
           <p className="text-text-muted text-[12px] text-center py-8">
             {state.loading ? 'Running simulation pipeline...' : 'Start the simulation to see agent reasoning...'}
@@ -107,7 +107,7 @@ export function AgentLogs() {
           logs.slice(-40).map((log, i) => (
             <div
               key={log.id || i}
-              className="py-3 border-b border-border last:border-0 animate-fade-in"
+              className="py-3 border-b border-border/50 last:border-0 animate-fade-in"
             >
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 {/* Sentiment dot */}
@@ -118,20 +118,20 @@ export function AgentLogs() {
                 {/* Agent type label */}
                 <span
                   className="text-[11px] font-semibold"
-                  style={{ color: TYPE_COLORS[log.agentType] || '#6B72A0' }}
+                  style={{ color: TYPE_COLORS[log.agentType] || '#9ca3b0' }}
                 >
                   {TYPE_LABELS[log.agentType] || log.agentType}
                 </span>
-                <span className="text-text-muted text-[11px]">·</span>
+                <span className="text-border text-[11px]">·</span>
                 {/* Agent name */}
-                <span className="text-text-secondary text-[11px]">{log.agentName}</span>
+                <span className="text-text-muted text-[11px]">{log.agentName}</span>
                 {/* Execution mode badge */}
                 <ModeBadge mode={log.executionMode} />
                 {/* Tick */}
-                <span className="text-text-muted text-[10px] ml-auto font-mono flex-shrink-0">T{log.tick}</span>
+                <span className="text-text-faint text-[10px] ml-auto font-mono flex-shrink-0">T{log.tick}</span>
               </div>
               {/* Message — supports multi-line */}
-              <p className="text-[12px] text-text-secondary leading-relaxed pl-3.5 whitespace-pre-line">
+              <p className="text-[12px] text-text-muted leading-relaxed pl-3.5 whitespace-pre-line">
                 {log.message}
               </p>
               {/* Meta chips */}

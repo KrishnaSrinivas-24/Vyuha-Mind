@@ -22,9 +22,9 @@ export function ProbabilityGauge({ value = 72, size = 80 }) {
     const fullArc = Math.PI * 2;
 
     function getColor(v) {
-      if (v >= 60) return '#34D399';
-      if (v >= 35) return '#FBBF24';
-      return '#F87171';
+      if (v >= 60) return '#10b981';
+      if (v >= 35) return '#f59e0b';
+      return '#ef4444';
     }
 
     function draw() {
@@ -36,7 +36,7 @@ export function ProbabilityGauge({ value = 72, size = 80 }) {
       // Track ring
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, fullArc);
-      ctx.strokeStyle = 'rgba(140,140,200,0.08)';
+      ctx.strokeStyle = 'rgba(30,37,54,0.8)';
       ctx.lineWidth = lineWidth;
       ctx.stroke();
 
@@ -49,7 +49,7 @@ export function ProbabilityGauge({ value = 72, size = 80 }) {
       ctx.arc(cx, cy, radius, startAngle, startAngle + sweep);
       ctx.strokeStyle = color;
       ctx.lineWidth = lineWidth + 6;
-      ctx.globalAlpha = 0.12;
+      ctx.globalAlpha = 0.15;
       ctx.lineCap = 'round';
       ctx.stroke();
       ctx.globalAlpha = 1;
@@ -63,15 +63,15 @@ export function ProbabilityGauge({ value = 72, size = 80 }) {
       ctx.stroke();
 
       // Value text
-      ctx.font = `600 ${size * 0.3}px Inter, sans-serif`;
-      ctx.fillStyle = '#ECECF1';
+      ctx.font = `700 ${size * 0.3}px "DM Sans", Inter, sans-serif`;
+      ctx.fillStyle = '#e8eaed';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(`${Math.round(v)}`, cx, cy - 2);
 
       // Label
-      ctx.font = `500 ${size * 0.1}px Inter, sans-serif`;
-      ctx.fillStyle = '#6B72A0';
+      ctx.font = `600 ${size * 0.1}px "DM Sans", Inter, sans-serif`;
+      ctx.fillStyle = '#4a5568';
       ctx.fillText('PoS', cx, cy + size * 0.17);
 
       if (Math.abs(value - animRef.current) > 0.1) {

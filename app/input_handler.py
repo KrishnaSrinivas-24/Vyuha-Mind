@@ -13,6 +13,8 @@ from app.utils import (
 
 SUPPORTED_SCENARIO_TAGS = {
     "energy_crisis",
+    "lpg_crisis_2026",
+    "e10_e20_transition",
     "supply_chain_disruption",
     "economic_growth",
     "recession",
@@ -23,6 +25,10 @@ SUPPORTED_SCENARIO_TAGS = {
 
 def _scenario_from_keywords(text: str) -> str:
     normalized = normalize_text(text)
+    if any(token in normalized for token in ["lpg crisis", "lpg disruption", "hormuz", "march 2026"]):
+        return "lpg_crisis_2026"
+    if any(token in normalized for token in ["e10", "e20", "ethanol", "fuel transition", "legacy vehicle", "conversion kit", "additive", "fuel blend"]):
+        return "e10_e20_transition"
     if any(token in normalized for token in ["lpg", "fuel", "gas", "energy"]):
         return "energy_crisis"
     if any(token in normalized for token in ["war", "conflict", "tension"]):
