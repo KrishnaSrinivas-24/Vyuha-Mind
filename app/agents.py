@@ -68,6 +68,9 @@ def market_analysis_agent(config: Dict[str, Any]) -> Dict[str, Any]:
             "price_sensitivity",
             "market_pressure",
             "consumer_stress",
+            "regulatory_risk",
+            "tech_maturity",
+            "sentiment_hype",
         ]:
             defaults[key] = clamp(float(free_output[key]))
         defaults = _apply_market_context_adjustments(
@@ -95,6 +98,9 @@ def market_analysis_agent(config: Dict[str, Any]) -> Dict[str, Any]:
             "price_sensitivity",
             "market_pressure",
             "consumer_stress",
+            "regulatory_risk",
+            "tech_maturity",
+            "sentiment_hype",
         ]:
             defaults[key] = clamp(float(grok_output[key]))
         defaults = _apply_market_context_adjustments(
@@ -162,6 +168,9 @@ def market_analysis_agent(config: Dict[str, Any]) -> Dict[str, Any]:
             "price_sensitivity",
             "market_pressure",
             "consumer_stress",
+            "regulatory_risk",
+            "tech_maturity",
+            "sentiment_hype",
         ]:
             if key in adk_output:
                 defaults[key] = clamp(float(adk_output[key]))

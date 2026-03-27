@@ -19,6 +19,8 @@ NEWS_KEYWORDS = {
     "demand": ["demand", "sales", "surge", "adoption", "switch"],
     "stress": ["inflation", "price rise", "affordability", "cost of living", "recession"],
     "volatility": ["war", "conflict", "sanction", "uncertainty", "volatility", "crisis"],
+    "regulatory": ["regulation", "policy", "tax", "gst", "law", "ban", "compliance", "government"],
+    "tech": ["tech", "ai", "innovation", "adoption", "digital", "modernization", "infrastructure"],
 }
 
 
@@ -203,6 +205,8 @@ def fetch_free_market_intel(config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     demand_hits = _count_keywords(texts, NEWS_KEYWORDS["demand"])
     stress_hits = _count_keywords(texts, NEWS_KEYWORDS["stress"])
     volatility_hits = _count_keywords(texts, NEWS_KEYWORDS["volatility"])
+    reg_hits = _count_keywords(texts, NEWS_KEYWORDS["regulatory"])
+    tech_hits = _count_keywords(texts, NEWS_KEYWORDS["tech"])
 
     sentiment = _sentiment_score(texts)
     if decision.wiki_pageviews:
@@ -229,6 +233,9 @@ def fetch_free_market_intel(config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "price_sensitivity": clamp(0.35 + _intensity(stress_hits, 18.0) * 0.6),
         "market_pressure": clamp(0.2 + 0.35 * _intensity(supply_hits + volatility_hits, 20.0) + 0.2 * _intensity(stress_hits, 18.0)),
         "consumer_stress": clamp(0.25 + _intensity(stress_hits, 18.0) * 0.6 + (0.5 - sentiment) * 0.2),
+        "regulatory_risk": clamp(0.15 + _intensity(reg_hits, 10.0) * 0.8),
+        "tech_maturity": clamp(0.4 + _intensity(tech_hits, 15.0) * 0.5 + 0.1 * wiki_signal),
+        "sentiment_hype": clamp(sentiment * 0.7 + _intensity(demand_hits, 20.0) * 0.3),
     }
 
     if not texts and all(s in {"wikipedia_pageviews", "google_trends"} for s in sources_used):

@@ -68,6 +68,9 @@ SCENARIO_DEFAULTS: Dict[str, Dict[str, float]] = {
         "price_sensitivity": 0.8,
         "market_pressure": 0.75,
         "consumer_stress": 0.7,
+        "regulatory_risk": 0.5,
+        "tech_maturity": 0.4,
+        "sentiment_hype": 0.3,
     },
     "stable_market": {
         "fuel_price_index": 0.5,
@@ -77,6 +80,9 @@ SCENARIO_DEFAULTS: Dict[str, Dict[str, float]] = {
         "price_sensitivity": 0.5,
         "market_pressure": 0.4,
         "consumer_stress": 0.3,
+        "regulatory_risk": 0.1,
+        "tech_maturity": 0.6,
+        "sentiment_hype": 0.5,
     },
     "economic_growth": {
         "fuel_price_index": 0.5,
@@ -86,6 +92,9 @@ SCENARIO_DEFAULTS: Dict[str, Dict[str, float]] = {
         "price_sensitivity": 0.4,
         "market_pressure": 0.3,
         "consumer_stress": 0.2,
+        "regulatory_risk": 0.05,
+        "tech_maturity": 0.8,
+        "sentiment_hype": 0.7,
     },
     "recession": {
         "fuel_price_index": 0.6,
@@ -95,6 +104,9 @@ SCENARIO_DEFAULTS: Dict[str, Dict[str, float]] = {
         "price_sensitivity": 0.9,
         "market_pressure": 0.8,
         "consumer_stress": 0.85,
+        "regulatory_risk": 0.4,
+        "tech_maturity": 0.3,
+        "sentiment_hype": 0.1,
     },
     "geopolitical_crisis": {
         "fuel_price_index": 0.85,
@@ -104,6 +116,9 @@ SCENARIO_DEFAULTS: Dict[str, Dict[str, float]] = {
         "price_sensitivity": 0.75,
         "market_pressure": 0.85,
         "consumer_stress": 0.7,
+        "regulatory_risk": 0.7,
+        "tech_maturity": 0.4,
+        "sentiment_hype": 0.2,
     },
     "supply_chain_disruption": {
         "fuel_price_index": 0.6,
@@ -113,5 +128,8 @@ SCENARIO_DEFAULTS: Dict[str, Dict[str, float]] = {
         "price_sensitivity": 0.7,
         "market_pressure": 0.7,
         "consumer_stress": 0.6,
+        "regulatory_risk": 0.3,
+        "tech_maturity": 0.4,
+        "sentiment_hype": 0.3,
     },
 }
