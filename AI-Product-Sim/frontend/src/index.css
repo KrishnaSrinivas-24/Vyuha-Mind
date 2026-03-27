@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base: #0a0a0b;
+  --color-surface: #101114;
+  --color-surface-raised: #18191d;
+  
+  --color-text-main: #f4f4f5;
+  --color-text-muted: #a1a1aa;
+  --color-text-faint: #52525b;
+  
+  --color-border: #27272a;
+  
+  --color-primary: #34d399; /* Emerald/Teal */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #fb7185;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-base);
+    color: var(--color-text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+}
+
+@layer components {
+  .neo-panel {
+    @apply bg-surface border border-border rounded-lg shadow-sm;
+  }
+  .neo-interactive {
+    @apply cursor-pointer transition-all duration-200 hover:border-text-muted hover:bg-surface-raised;
+  }
+  .neo-input {
+    @apply bg-surface-raised border border-border rounded-md px-4 py-3 text-text-main focus:outline-none focus:border-text-muted transition-colors;
+  }
+  .neo-btn {
+    @apply flex items-center justify-center gap-2 px-6 py-3 rounded-md font-medium transition-all duration-200;
+  }
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: var(--color-base); 
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-border); 
+  border-radius: 4px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-faint); 
+}
+
+@keyframes dataFlow {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-data-flow {
+  animation: dataFlow 0.5s ease-out forwards;
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.95); }
+}
+.animate-pulse-subtle {
+  animation: pulseSubtle 2s infinite ease-in-out;
+}

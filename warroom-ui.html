@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STRATEX — Product War Room</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --black:#020408;
+  --bg:#060d14;
+  --bg2:#0a1520;
+  --bg3:#0e1d2e;
+  --panel:#0a1828;
+  --border:#1a3a5c;
+  --border-hot:#00ffe1;
+  --cyan:#00ffe1;
+  --cyan2:#00c9b1;
+  --orange:#ff6b2b;
+  --red:#ff2d55;
+  --amber:#ffbb00;
+  --green:#00ff88;
+  --purple:#b388ff;
+  --blue:#4fc3f7;
+  --text:#c8dae8;
+  --text-dim:#4a6a7c;
+  --text-bright:#e8f4fc;
+  --font-mono:'IBM Plex Mono',monospace;
+  --font-display:'Orbitron',sans-serif;
+  --font-term:'Share Tech Mono',monospace;
+}
+
+html,body{height:100%;background:var(--black);color:var(--text);font-family:var(--font-mono);font-size:13px;overflow-x:hidden}
+
+/* SCANLINE OVERLAY */
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,225,0.012) 2px,rgba(0,255,225,0.012) 4px);pointer-events:none;z-index:9999}
+
+/* NOISE GRAIN */
+body::after{content:'';position:fixed;inset:0;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");pointer-events:none;z-index:9998}
+
+/* ======= HEADER ======= */
+.hdr{
+  position:fixed;top:0;left:0;right:0;height:52px;
+  background:rgba(6,13,20,0.96);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;z-index:100;
+  backdrop-filter:blur(12px);
+}
+.hdr-logo{font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--cyan);letter-spacing:4px;text-shadow:0 0 20px rgba(0,255,225,0.5)}
+.hdr-logo span{color:var(--orange);font-size:10px;letter-spacing:6px;display:block;margin-top:-2px;font-weight:400}
+.hdr-status{display:flex;gap:16px;align-items:center}
+.status-dot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--text-dim)}
+.dot.live{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+.dot.warn{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hdr-nav{display:flex;gap:2px}
+.nav-btn{background:transparent;border:none;color:var(--text-dim);font-family:var(--font-mono);font-size:11px;padding:6px 14px;cursor:pointer;letter-spacing:1px;border-radius:2px;transition:all .2s}
+.nav-btn.active,.nav-btn:hover{color:var(--cyan);background:rgba(0,255,225,0.06);border-radius:2px}
+.nav-btn.active{border-bottom:2px solid var(--cyan)}
+
+/* ======= PAGES ======= */
+.page{display:none;padding:68px 24px 24px;min-height:100vh;animation:fadein .3s ease}
+.page.active{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ======= SETUP PAGE ======= */
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:1100px;margin:0 auto}
+.setup-hero{grid-column:1/-1;text-align:center;padding:32px 0 20px}
+.setup-title{font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--cyan);letter-spacing:6px;text-shadow:0 0 30px rgba(0,255,225,0.4)}
+.setup-sub{color:var(--text-dim);font-size:12px;letter-spacing:3px;margin-top:8px;font-family:var(--font-term)}
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:20px;
+  position:relative;
+  overflow:hidden;
+}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:.4}
+.panel-label{font-family:var(--font-display);font-size:10px;letter-spacing:3px;color:var(--cyan);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.panel-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px;font-family:var(--font-term)}
+.field input,.field textarea,.field select{
+  width:100%;background:rgba(0,0,0,0.4);
+  border:1px solid var(--border);
+  border-radius:3px;
+  color:var(--text-bright);
+  font-family:var(--font-mono);
+  font-size:13px;
+  padding:10px 12px;
+  outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.field input:focus,.field textarea:focus,.field select:focus{
+  border-color:var(--cyan);
+  box-shadow:0 0 0 1px rgba(0,255,225,0.15),inset 0 0 20px rgba(0,255,225,0.03);
+}
+.field textarea{resize:vertical;min-height:80px}
+.field select{cursor:pointer}
+.field select option{background:var(--bg2)}
+
+.price-display{font-family:var(--font-display);font-size:28px;color:var(--amber);text-align:center;margin:8px 0;letter-spacing:2px;text-shadow:0 0 15px rgba(255,187,0,.3)}
+.price-display span{font-size:13px;color:var(--text-dim);font-family:var(--font-mono)}
+
+input[type=range]{-webkit-appearance:none;width:100%;height:2px;background:var(--border);outline:none;border-radius:2px;border:none;padding:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--cyan);cursor:pointer;box-shadow:0 0 8px var(--cyan)}
+
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.tag{background:rgba(0,255,225,0.08);border:1px solid var(--border);border-radius:2px;padding:4px 12px;font-size:11px;color:var(--text-dim);cursor:pointer;transition:all .2s;letter-spacing:1px}
+.tag.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,255,225,0.12);box-shadow:0 0 8px rgba(0,255,225,.1)}
+
+.scenario-box{
+  background:rgba(255,43,86,.05);
+  border:1px solid rgba(255,43,86,.2);
+  border-radius:3px;padding:14px;
+  display:flex;align-items:flex-start;gap:10px;cursor:pointer;
+  transition:all .2s;margin-bottom:10px;
+}
+.scenario-box:hover,.scenario-box.active{border-color:var(--orange);background:rgba(255,107,43,.08)}
+.scenario-box.active{border-color:var(--cyan);background:rgba(0,255,225,.05)}
+.scenario-icon{font-size:18px;flex-shrink:0;margin-top:2px}
+.scenario-text{flex:1}
+.scenario-title{font-size:12px;color:var(--text-bright);letter-spacing:1px;margin-bottom:3px}
+.scenario-desc{font-size:11px;color:var(--text-dim);line-height:1.5}
+
+.agent-row{display:flex;gap:10px;margin-bottom:10px}
+.agent-card{flex:1;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:3px;padding:12px;text-align:center;cursor:pointer;transition:all .2s}
+.agent-card.on{border-color:var(--cyan);background:rgba(0,255,225,.06)}
+.agent-card .aic{font-size:20px;margin-bottom:6px}
+.agent-card .ain{font-size:10px;letter-spacing:2px;color:var(--text-dim);font-family:var(--font-display)}
+.agent-card.on .ain{color:var(--cyan)}
+.agent-pill{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--text-dim);margin-top:6px}
+.agent-card.on .agent-pill{background:var(--green);box-shadow:0 0 8px var(--green)}
+
+.launch-btn{
+  width:100%;padding:16px;
+  font-family:var(--font-display);font-size:14px;font-weight:600;
+  letter-spacing:4px;color:var(--black);
+  background:var(--cyan);border:none;border-radius:3px;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:all .2s;text-transform:uppercase;
+  box-shadow:0 0 30px rgba(0,255,225,.3);
+}
+.launch-btn:hover{box-shadow:0 0 50px rgba(0,255,225,.5);transform:translateY(-1px)}
+.launch-btn:active{transform:translateY(0)}
+
+/* ======= DASHBOARD PAGE ======= */
+.dash-grid{
+  display:grid;
+  grid-template-columns:280px 1fr 280px;
+  grid-template-rows:auto 1fr auto;
+  gap:16px;
+  max-width:1400px;margin:0 auto;
+}
+
+/* KPI ROW */
+.kpi-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.kpi{
+  background:var(--panel);border:1px solid var(--border);border-radius:3px;
+  padding:14px 16px;position:relative;overflow:hidden;
+}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kpi-color,var(--cyan))}
+.kpi-label{font-size:10px;letter-spacing:2px;color:var(--text-dim);font-family:var(--font-term);margin-bottom:8px}
+.kpi-val{font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--kpi-color,var(--cyan));text-shadow:0 0 15px var(--kpi-color,rgba(0,255,225,.3));transition:all .5s}
+.kpi-delta{font-size:11px;color:var(--text-dim);margin-top:4px}
+.kpi-delta.up{color:var(--green)}
+.kpi-delta.down{color:var(--red)}
+.kpi-bar{height:2px;background:var(--border);margin-top:10px;border-radius:1px;overflow:hidden}
+.kpi-bar-fill{height:100%;background:var(--kpi-color,var(--cyan));border-radius:1px;transition:width .8s ease;opacity:.6}
+
+/* AGENT LOG PANEL */
+.agent-log-panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:16px;display:flex;flex-direction:column;height:500px}
+.log-stream{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px}
+.log-stream::-webkit-scrollbar{width:3px}
+.log-stream::-webkit-scrollbar-track{background:transparent}
+.log-stream::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.log-entry{padding:10px 12px;border-radius:3px;border-left:2px solid;font-size:12px;line-height:1.6;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.log-entry.customer{border-color:var(--blue);background:rgba(79,195,247,.05)}
+.log-entry.competitor{border-color:var(--orange);background:rgba(255,107,43,.05)}
+.log-entry.investor{border-color:var(--purple);background:rgba(179,136,255,.05)}
+.log-entry.market{border-color:var(--cyan);background:rgba(0,255,225,.04)}
+.log-entry.system{border-color:var(--text-dim);background:rgba(74,106,124,.04)}
+.log-agent{font-size:10px;letter-spacing:2px;font-family:var(--font-display);margin-bottom:4px}
+.log-entry.customer .log-agent{color:var(--blue)}
+.log-entry.competitor .log-agent{color:var(--orange)}
+.log-entry.investor .log-agent{color:var(--purple)}
+.log-entry.market .log-agent{color:var(--cyan)}
+.log-entry.system .log-agent{color:var(--text-dim)}
+.log-text{color:var(--text)}
+.log-step{font-size:10px;color:var(--text-dim);float:right;font-family:var(--font-term)}
+
+/* CHARTS */
+.chart-panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:16px}
+.chart-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.chart-tab{background:transparent;border:none;color:var(--text-dim);font-family:var(--font-mono);font-size:11px;padding:4px 12px;cursor:pointer;letter-spacing:1px;border-radius:2px;transition:all .2s}
+.chart-tab.active{color:var(--cyan);background:rgba(0,255,225,.08)}
+canvas{width:100%!important}
+
+/* COMPETITOR MATRIX */
+.competitor-panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:16px;height:500px;overflow-y:auto}
+.comp-entry{padding:12px;border:1px solid var(--border);border-radius:3px;margin-bottom:10px;position:relative;transition:border-color .3s}
+.comp-entry.threat-high{border-color:rgba(255,43,86,.4)}
+.comp-entry.threat-med{border-color:rgba(255,187,0,.3)}
+.comp-entry.threat-low{border-color:rgba(0,255,136,.2)}
+.comp-name{font-size:12px;color:var(--text-bright);letter-spacing:1px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.threat-badge{font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:2px;font-family:var(--font-display)}
+.threat-badge.high{background:rgba(255,43,86,.15);color:var(--red);border:1px solid rgba(255,43,86,.3)}
+.threat-badge.med{background:rgba(255,187,0,.1);color:var(--amber);border:1px solid rgba(255,187,0,.25)}
+.threat-badge.low{background:rgba(0,255,136,.08);color:var(--green);border:1px solid rgba(0,255,136,.2)}
+.comp-action{font-size:11px;color:var(--text-dim);font-family:var(--font-term);margin-bottom:8px}
+.comp-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.comp-bar-label{font-size:10px;color:var(--text-dim);width:70px;flex-shrink:0}
+.comp-bar-bg{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.comp-bar-fill{height:100%;border-radius:2px;transition:width 1s ease}
+
+/* SUCCESS GAUGE */
+.gauge-panel{grid-column:2;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.gauge-outer{position:relative;width:200px;height:200px}
+.gauge-svg{width:200px;height:200px}
+.gauge-score{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.gauge-number{font-family:var(--font-display);font-size:42px;font-weight:800;line-height:1;transition:all .8s}
+.gauge-label{font-size:10px;letter-spacing:3px;color:var(--text-dim);margin-top:4px;font-family:var(--font-term)}
+.gauge-status{font-family:var(--font-display);font-size:12px;letter-spacing:3px;margin-top:12px;padding:6px 20px;border-radius:2px;border:1px solid}
+
+/* SCENARIO INJECTOR */
+.injector-panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:16px}
+.inject-btn{
+  width:100%;padding:10px;margin-bottom:8px;
+  background:rgba(255,43,86,.08);border:1px solid rgba(255,43,86,.25);
+  color:var(--red);font-family:var(--font-mono);font-size:11px;
+  letter-spacing:1px;border-radius:3px;cursor:pointer;text-align:left;
+  transition:all .2s;
+}
+.inject-btn:hover{background:rgba(255,43,86,.15);border-color:var(--red)}
+
+/* SIM CONTROLS */
+.controls-bar{
+  grid-column:1/-1;background:var(--panel);border:1px solid var(--border);
+  border-radius:4px;padding:14px 20px;
+  display:flex;align-items:center;gap:16px;
+}
+.ctrl-btn{
+  background:transparent;border:1px solid var(--border);
+  color:var(--text-dim);font-family:var(--font-mono);font-size:11px;
+  padding:8px 18px;border-radius:3px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;transition:all .2s;letter-spacing:1px;
+}
+.ctrl-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.ctrl-btn.primary{border-color:var(--cyan);color:var(--cyan);background:rgba(0,255,225,.06)}
+.ctrl-btn.danger{border-color:var(--red);color:var(--red)}
+.step-indicator{font-family:var(--font-display);font-size:12px;color:var(--text-dim);letter-spacing:2px}
+.step-progress{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.step-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:2px;transition:width .6s ease}
+.speed-label{font-size:10px;color:var(--text-dim);font-family:var(--font-term)}
+
+/* RECOMMENDATION PAGE */
+.rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:1100px;margin:0 auto}
+.rec-hero{grid-column:1/-1;text-align:center;padding:24px 0 8px}
+.rec-score-big{font-family:var(--font-display);font-size:80px;font-weight:800;line-height:1}
+.rec-status{font-size:12px;letter-spacing:4px;color:var(--text-dim);font-family:var(--font-term);margin-top:4px}
+.variant-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:4px;
+  padding:20px;cursor:pointer;transition:all .3s;
+}
+.variant-card:hover,.variant-card.best{border-color:var(--cyan);background:rgba(0,255,225,.04)}
+.variant-card.best::before{content:'★ OPTIMAL';position:absolute;top:-1px;right:20px;font-size:9px;font-family:var(--font-display);letter-spacing:3px;color:var(--cyan);background:var(--panel);padding:0 8px;border:1px solid var(--cyan);border-top:none}
+.variant-card{position:relative}
+.variant-price{font-family:var(--font-display);font-size:28px;color:var(--amber);letter-spacing:2px}
+.variant-score{font-family:var(--font-display);font-size:14px;color:var(--text-dim);margin-top:4px}
+.variant-score span{color:var(--cyan);font-size:20px}
+.advice-panel{grid-column:1/-1;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:24px;border-left:3px solid var(--cyan)}
+.advice-title{font-family:var(--font-display);font-size:11px;letter-spacing:4px;color:var(--cyan);margin-bottom:14px}
+.advice-text{font-size:14px;line-height:1.8;color:var(--text);font-family:var(--font-mono)}
+
+/* HEATMAP */
+.heatmap-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:12px}
+.hm-cell{aspect-ratio:1;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:12px;font-weight:600;transition:all .5s}
+.hm-label{font-size:10px;letter-spacing:1px;color:var(--text-dim);text-align:center;font-family:var(--font-term)}
+
+/* MARKET EVENTS TICKER */
+.ticker{
+  grid-column:1/-1;background:rgba(0,0,0,.5);
+  border:1px solid var(--border);border-radius:3px;
+  padding:10px 16px;display:flex;align-items:center;gap:16px;overflow:hidden;
+}
+.ticker-label{font-family:var(--font-display);font-size:10px;color:var(--orange);letter-spacing:3px;flex-shrink:0}
+.ticker-scroll{flex:1;overflow:hidden;white-space:nowrap}
+.ticker-inner{display:inline-block;animation:scroll 30s linear infinite;font-size:11px;color:var(--text-dim);font-family:var(--font-term)}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* TERMINAL CURSOR */
+.cursor::after{content:'▮';animation:blink .8s infinite;color:var(--cyan);margin-left:2px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* LOADING OVERLAY */
+.loading-overlay{position:fixed;inset:0;background:rgba(2,4,8,.95);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:fadein .2s}
+.loading-overlay.hidden{display:none}
+.loading-ring{width:80px;height:80px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:24px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:var(--font-display);font-size:13px;letter-spacing:4px;color:var(--cyan);margin-bottom:8px}
+.loading-sub{font-size:11px;color:var(--text-dim);font-family:var(--font-term)}
+.loading-log{margin-top:20px;width:340px;background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:3px;padding:12px;max-height:120px;overflow:hidden}
+.loading-log-entry{font-size:11px;color:var(--text-dim);font-family:var(--font-term);padding:2px 0;animation:fadeup .3s ease}
+@keyframes fadeup{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.loading-log-entry::before{content:'> ';color:var(--cyan)}
+
+/* RESPONSIVE TWEAKS */
+@media(max-width:1100px){.dash-grid{grid-template-columns:1fr 1fr}.kpi-row{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">
+    STRATEX
+    <span>PRODUCT INTELLIGENCE</span>
+  </div>
+  <nav class="hdr-nav">
+    <button class="nav-btn active" onclick="goPage('setup')">// SETUP</button>
+    <button class="nav-btn" onclick="goPage('dashboard')" id="nav-dash">// WAR ROOM</button>
+    <button class="nav-btn" onclick="goPage('rec')" id="nav-rec">// RECOMMENDATION</button>
+  </nav>
+  <div class="hdr-status">
+    <div class="status-dot"><div class="dot live"></div>AGENTS ONLINE</div>
+    <div class="status-dot"><div class="dot warn"></div>GROK CONNECTED</div>
+  </div>
+</header>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay hidden" id="loading">
+  <div class="loading-ring"></div>
+  <div class="loading-text" id="loading-text">INITIALIZING SIMULATION</div>
+  <div class="loading-sub" id="loading-sub">Engaging market agents...</div>
+  <div class="loading-log" id="loading-log"></div>
+</div>
+
+<!-- ====== SETUP PAGE ====== -->
+<div class="page active" id="page-setup">
+  <div class="setup-grid">
+    <div class="setup-hero">
+      <div class="setup-title">PRODUCT WAR ROOM</div>
+      <div class="setup-sub">// MULTI-AGENT MARKET SIMULATION ENGINE //</div>
+    </div>
+
+    <!-- PRD UPLOAD -->
+    <div class="panel" style="grid-column:1/-1;background:rgba(0,255,225,.03);border:1px dashed var(--border)">
+      <div class="panel-label">📄 IMPORT FROM PRD</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center">
+        <div class="field" style="margin-bottom:0">
+          <label>UPLOAD PRODUCT REQUIREMENTS DOCUMENT (.pdf, .doc, .docx, .txt, .md)</label>
+          <input type="file" id="prd-upload" accept=".pdf,.doc,.docx,.txt,.md" placeholder="Select PRD file...">
+        </div>
+        <div>
+          <button class="launch-btn" onload="this.style.background=`rgba(0,255,225,.1)`;this.style.color=`var(--cyan)`;this.style.textShadow=`none`" style="width:100%;background:rgba(0,255,225,.08);border:1px solid var(--cyan);color:var(--cyan);box-shadow:none;padding:10px" onclick="uploadAndParsePRD()">
+            🔍 PARSE PRD
+          </button>
+        </div>
+      </div>
+      <div id="prd-status" style="font-size:10px;color:var(--text-dim);font-family:var(--font-term);margin-top:8px;display:none">
+        <span id="prd-status-text"></span>
+      </div>
+      <div id="prd-confidence" style="font-size:10px;color:var(--text-dim);font-family:var(--font-term);margin-top:6px;display:none">
+        Extraction Confidence: <span id="prd-conf-value" style="color:var(--green)">80%</span>
+      </div>
+    </div>
+
+    <!-- PRODUCT INPUT -->
+    <div class="panel">
+      <div class="panel-label">01 PRODUCT INTEL</div>
+      <div class="field">
+        <label>PRODUCT NAME</label>
+        <input type="text" id="in-name" placeholder="e.g. Electric Cooker X1" value="Electric Cooker X1">
+      </div>
+      <div class="field">
+        <label>DESCRIPTION</label>
+        <textarea id="in-desc" placeholder="Brief product description...">Induction-based electric cooker for home use, targeting fuel-crisis impacted households.</textarea>
+      </div>
+      <div class="field">
+        <label>KEY FEATURES</label>
+        <div class="tags" id="feature-tags">
+          <div class="tag active">Fast Heating</div>
+          <div class="tag active">Low Power</div>
+          <div class="tag active">Auto Shutoff</div>
+          <div class="tag">Smart Timer</div>
+          <div class="tag">App Control</div>
+          <div class="tag">Portability</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRICING -->
+    <div class="panel">
+      <div class="panel-label">02 PRICING MATRIX</div>
+      <div class="field">
+        <label>BASE PRICE (₹)</label>
+        <div class="price-display" id="price-display">₹3,000 <span>INR</span></div>
+        <input type="range" min="500" max="15000" step="100" value="3000" id="price-slider" oninput="updatePrice(this.value)">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);margin-top:4px;font-family:var(--font-term)"><span>₹500</span><span>₹15,000</span></div>
+      </div>
+      <div class="field">
+        <label>PRICING STRATEGY</label>
+        <select id="in-strategy">
+          <option value="penetration">PENETRATION — Enter low, grab market share</option>
+          <option value="competitive">COMPETITIVE — Match market pricing</option>
+          <option value="premium">PREMIUM — Position as premium product</option>
+          <option value="skimming">PRICE SKIMMING — Start high, drop over time</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>TARGET AUDIENCE</label>
+        <select id="in-audience">
+          <option value="budget">BUDGET — Price-sensitive households</option>
+          <option value="middle_income" selected>MIDDLE CLASS — Aspirational buyers</option>
+          <option value="premium">PREMIUM — Quality-first segment</option>
+          <option value="enterprise">ENTERPRISE — B2B buyers</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>REGION</label>
+        <select id="in-region">
+          <option value="IN" selected>INDIA</option>
+          <option value="US">UNITED STATES</option>
+          <option value="EU">EUROPE</option>
+          <option value="SE_ASIA">SOUTH EAST ASIA</option>
+          <option value="MENA">MIDDLE EAST & AFRICA</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- MARKET SCENARIO -->
+    <div class="panel" style="grid-column:1/-1">
+      <div class="panel-label">03 MARKET SCENARIO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div class="field" style="margin-bottom:8px">
+            <label>SCENARIO DESCRIPTION (FREE TEXT)</label>
+            <textarea id="in-scenario" style="min-height:60px" placeholder="Describe current market situation...">Iran-US war has caused an LPG shortage across South Asia. India faces severe fuel supply disruption with LPG cylinder prices rising 35%. Consumers are actively seeking electric alternatives.</textarea>
+          </div>
+          <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-term);padding:8px;background:rgba(0,255,225,.04);border:1px solid var(--border);border-radius:3px">
+            ⚡ GROK ANALYSIS — real-time geopolitical + market signals will be extracted automatically
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:2px;font-family:var(--font-term);margin-bottom:10px">OR SELECT PRESET</div>
+          <div class="scenario-box active" id="sc1" onclick="selectScenario('sc1','Iran-US war has caused an LPG shortage across South Asia. India faces severe fuel supply disruption with LPG cylinder prices rising 35%.')">
+            <div class="scenario-icon">🔥</div>
+            <div class="scenario-text">
+              <div class="scenario-title">ENERGY CRISIS</div>
+              <div class="scenario-desc">Geopolitical conflict → fuel shortage → demand shift to electric</div>
+            </div>
+          </div>
+          <div class="scenario-box" id="sc2" onclick="selectScenario('sc2','Global supply chain disruptions affecting manufacturing and logistics. Component shortages and port backlogs causing delivery delays.')">
+            <div class="scenario-icon">⚓</div>
+            <div class="scenario-text">
+              <div class="scenario-title">SUPPLY CHAIN CRISIS</div>
+              <div class="scenario-desc">Manufacturing disruptions, component shortages</div>
+            </div>
+          </div>
+          <div class="scenario-box" id="sc3" onclick="selectScenario('sc3','Economic growth phase with rising consumer spending, high employment, and strong market confidence across most segments.')">
+            <div class="scenario-icon">📈</div>
+            <div class="scenario-text">
+              <div class="scenario-title">GROWTH MARKET</div>
+              <div class="scenario-desc">Rising consumer confidence, strong spending power</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENT CONFIG -->
+    <div class="panel">
+      <div class="panel-label">04 AGENT CONFIGURATION</div>
+      <div class="agent-row">
+        <div class="agent-card on" id="ag-market" onclick="toggleAgent('ag-market')">
+          <div class="aic">🌍</div>
+          <div class="ain">MARKET</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-top:2px;font-family:var(--font-term)">GROK AI</div>
+          <div class="agent-pill"></div>
+        </div>
+        <div class="agent-card on" id="ag-customer" onclick="toggleAgent('ag-customer')">
+          <div class="aic">👥</div>
+          <div class="ain">CUSTOMER</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-top:2px;font-family:var(--font-term)">CLAUDE</div>
+          <div class="agent-pill"></div>
+        </div>
+        <div class="agent-card on" id="ag-competitor" onclick="toggleAgent('ag-competitor')">
+          <div class="aic">⚔️</div>
+          <div class="ain">COMPETITOR</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-top:2px;font-family:var(--font-term)">CLAUDE</div>
+          <div class="agent-pill"></div>
+        </div>
+        <div class="agent-card on" id="ag-investor" onclick="toggleAgent('ag-investor')">
+          <div class="aic">💰</div>
+          <div class="ain">INVESTOR</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-top:2px;font-family:var(--font-term)">CLAUDE</div>
+          <div class="agent-pill"></div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-term);padding:8px 0">
+        SIM STEPS: <span style="color:var(--cyan)">5</span> &nbsp;|&nbsp; PRICE VARIANTS: <span style="color:var(--cyan)">4</span> &nbsp;|&nbsp; MODE: <span style="color:var(--green)">FULL INTEL</span>
+      </div>
+    </div>
+
+    <!-- LAUNCH -->
+    <div class="panel" style="display:flex;flex-direction:column;justify-content:center;gap:16px">
+      <div class="panel-label">05 LAUNCH SEQUENCE</div>
+      <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-term);line-height:1.8">
+        > PRODUCT: <span class="cursor" id="launch-product-preview" style="color:var(--text-bright)">Electric Cooker X1</span><br>
+        > PRICE: <span style="color:var(--amber)">₹3,000</span><br>
+        > REGION: <span style="color:var(--blue)">INDIA</span><br>
+        > SCENARIO: <span style="color:var(--red)">ENERGY CRISIS</span><br>
+        > AGENTS: <span style="color:var(--green)">4 ONLINE</span><br>
+        > GROK: <span style="color:var(--green)">CONNECTED</span>
+      </div>
+      <button class="launch-btn" onclick="launchSimulation()">
+        ⚡ INITIATE SIMULATION
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== DASHBOARD PAGE ====== -->
+<div class="page" id="page-dashboard">
+
+  <!-- MARKET TICKER -->
+  <div class="ticker" style="margin-bottom:14px">
+    <div class="ticker-label">// LIVE FEED</div>
+    <div class="ticker-scroll">
+      <span class="ticker-inner" id="ticker-text">
+        ⚡ LPG prices up 35% in India this month &nbsp;|&nbsp; Electric cooker demand surges 40% in Andhra Pradesh &nbsp;|&nbsp; Competitor brand slashes induction stove price by ₹400 &nbsp;|&nbsp; Government announces electric cooking subsidy scheme &nbsp;|&nbsp; Iran-US tensions escalate — Strait of Hormuz at risk &nbsp;|&nbsp; Consumer sentiment index at 3-year low in energy sector &nbsp;|&nbsp; VC investment in clean energy appliances up 120% QoQ &nbsp;|&nbsp; ⚡ LPG prices up 35% in India this month &nbsp;|&nbsp; Electric cooker demand surges 40% in Andhra Pradesh &nbsp;|&nbsp; Competitor brand slashes induction stove price by ₹400 &nbsp;|&nbsp; Government announces electric cooking subsidy scheme
+      </span>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+      <div class="kpi" style="--kpi-color:var(--cyan)">
+        <div class="kpi-label">MARKET DEMAND</div>
+        <div class="kpi-val" id="kpi-demand">78%</div>
+        <div class="kpi-delta up" id="kpi-demand-delta">▲ +12% vs baseline</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-demand-bar" style="width:78%"></div></div>
+      </div>
+      <div class="kpi" style="--kpi-color:var(--orange)">
+        <div class="kpi-label">COMPETITION</div>
+        <div class="kpi-val" id="kpi-comp">55%</div>
+        <div class="kpi-delta down" id="kpi-comp-delta">▲ +22% intensifying</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-comp-bar" style="width:55%"></div></div>
+      </div>
+      <div class="kpi" style="--kpi-color:var(--purple)">
+        <div class="kpi-label">INVESTOR CONF.</div>
+        <div class="kpi-val" id="kpi-conf">72%</div>
+        <div class="kpi-delta up" id="kpi-conf-delta">▲ Strong buy signal</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-conf-bar" style="width:72%"></div></div>
+      </div>
+      <div class="kpi" style="--kpi-color:var(--red)">
+        <div class="kpi-label">RISK INDEX</div>
+        <div class="kpi-val" id="kpi-risk">38%</div>
+        <div class="kpi-delta" id="kpi-risk-delta" style="color:var(--amber)">▲ Moderate — watch competition</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-risk-bar" style="width:38%"></div></div>
+      </div>
+      <div class="kpi" style="--kpi-color:var(--amber)">
+        <div class="kpi-label">CURRENT PRICE</div>
+        <div class="kpi-val" id="kpi-price">₹2,800</div>
+        <div class="kpi-delta down" id="kpi-price-delta">▼ ₹200 competitor pressure</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-price-bar" style="width:56%"></div></div>
+      </div>
+    </div>
+
+    <!-- LEFT: AGENT LOG -->
+    <div class="agent-log-panel">
+      <div class="panel-label">AGENT LIVE FEED</div>
+      <div class="log-stream" id="log-stream">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- CENTER: CHARTS -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="chart-panel">
+        <div class="chart-tabs">
+          <button class="chart-tab active" onclick="switchChart('demand', this)">DEMAND</button>
+          <button class="chart-tab" onclick="switchChart('competition', this)">COMPETITION</button>
+          <button class="chart-tab" onclick="switchChart('confidence', this)">CONFIDENCE</button>
+          <button class="chart-tab" onclick="switchChart('all', this)">OVERVIEW</button>
+        </div>
+        <canvas id="main-chart" height="180"></canvas>
+      </div>
+
+      <!-- SUCCESS GAUGE -->
+      <div class="gauge-panel">
+        <div class="gauge-outer">
+          <svg class="gauge-svg" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="80" fill="none" stroke="var(--border)" stroke-width="6"/>
+            <circle cx="100" cy="100" r="80" fill="none" stroke="url(#gauge-grad)" stroke-width="6"
+              stroke-dasharray="503" id="gauge-arc" stroke-dashoffset="126"
+              stroke-linecap="round" transform="rotate(-90 100 100)"/>
+            <defs>
+              <linearGradient id="gauge-grad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#00ffe1"/>
+                <stop offset="100%" stop-color="#b388ff"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="gauge-score">
+            <div class="gauge-number" id="gauge-num" style="color:var(--cyan)">74</div>
+            <div class="gauge-label">SUCCESS SCORE</div>
+          </div>
+        </div>
+        <div class="gauge-status" id="gauge-status" style="color:var(--cyan);border-color:var(--cyan);background:rgba(0,255,225,.06)">
+          ✅ MODERATE POTENTIAL
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: COMPETITOR MATRIX -->
+    <div class="competitor-panel">
+      <div class="panel-label">COMPETITOR INTEL</div>
+      <div id="competitor-list">
+        <div class="comp-entry threat-high">
+          <div class="comp-name">PRESTIGE INDUCTION <span class="threat-badge high">HIGH THREAT</span></div>
+          <div class="comp-action">⚔️ Dropped price ₹400 — aggressive response to your launch</div>
+          <div class="comp-bar-row"><div class="comp-bar-label">PRICE CUT</div><div class="comp-bar-bg"><div class="comp-bar-fill" style="width:80%;background:var(--red)"></div></div></div>
+          <div class="comp-bar-row"><div class="comp-bar-label">MKTG PUSH</div><div class="comp-bar-bg"><div class="comp-bar-fill" style="width:65%;background:var(--orange)"></div></div></div>
+          <div class="comp-bar-row"><div class="comp-bar-label">SUPPLY</div><div class="comp-bar-bg"><div class="comp-bar-fill" style="width:45%;background:var(--amber)"></div></div></div>
+        </div>
+        <div class="comp-entry threat-med">
+          <div class="comp-name">PIGEON ELECTRIC <span class="threat-badge med">MED THREAT</span></div>
+          <div class="comp-action">📢 Increased digital ads targeting LPG keywords</div>
+          <div class="comp-bar-row"><div class="comp-bar-label">PRICE CUT</div><div class="comp-bar-bg"><div class="comp-bar-fill" style="width:30%;background:var(--amber)"></div></div></div>
+          <div class="comp-bar-row"><div class="comp-bar-label">MKTG PUSH</div><div class="comp-bar-bg"><div class="comp-bar-fill" style="width:70%;background:var(--amber)"></div></div></div>
+          <div class="comp-bar-row"><div class="comp-bar-label">SUPPLY</div><div class="comp-bar-bg"><div class="comp-bar-fill" style="width:60%;background:var(--amber)"></div></div></div>
+        </div>
+        <div class="comp-entry threat-low">
+          <div class="comp-name">BAJAJ INDUCTION <span class="threat-badge low">LOW THREAT</span></div>
+          <div class="comp-action">👁️ Monitoring — no response yet</div>
+          <div class="comp-bar-row"><div class="comp-bar-label">PRICE CUT</div><div class="comp-bar-bg"><div class="comp-bar-fill" style="width:5%;background:var(--green)"></div></div></div>
+          <div class="comp-bar-row"><div class="comp-bar-label">MKTG PUSH</div><div class="comp-bar-bg"><div class="comp-bar-fill" style="width:20%;background:var(--green)"></div></div></div>
+          <div class="comp-bar-row"><div class="comp-bar-label">SUPPLY</div><div class="comp-bar-bg"><div class="comp-bar-fill" style="width:80%;background:var(--green)"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIO INJECTOR -->
+    <div class="injector-panel">
+      <div class="panel-label">CRISIS INJECTION</div>
+      <button class="inject-btn" onclick="injectCrisis('price_war')">⚔️ TRIGGER PRICE WAR</button>
+      <button class="inject-btn" onclick="injectCrisis('supply_shock')">📦 SUPPLY SHOCK +40%</button>
+      <button class="inject-btn" onclick="injectCrisis('media_viral')">📱 VIRAL MEDIA EVENT</button>
+      <button class="inject-btn" onclick="injectCrisis('govt_subsidy')">🏛️ GOVT SUBSIDY ANNOUNCE</button>
+      <button class="inject-btn" onclick="injectCrisis('competitor_enter')">⚠️ NEW COMPETITOR ENTERS</button>
+    </div>
+
+    <!-- SENTIMENT HEATMAP -->
+    <div class="chart-panel" style="grid-column:2">
+      <div class="panel-label">AGENT SENTIMENT MATRIX</div>
+      <div style="display:grid;grid-template-columns:80px repeat(5,1fr);gap:4px;font-size:10px;font-family:var(--font-term);color:var(--text-dim);margin-bottom:4px">
+        <div></div>
+        <div style="text-align:center">STEP 1</div>
+        <div style="text-align:center">STEP 2</div>
+        <div style="text-align:center">STEP 3</div>
+        <div style="text-align:center">STEP 4</div>
+        <div style="text-align:center">STEP 5</div>
+      </div>
+      <div id="heatmap" style="display:grid;grid-template-columns:80px repeat(5,1fr);gap:4px">
+        <!-- JS populated -->
+      </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls-bar">
+      <button class="ctrl-btn primary" id="play-btn" onclick="togglePlay()">▶ PLAY</button>
+      <button class="ctrl-btn" onclick="stepOnce()">⏭ STEP</button>
+      <button class="ctrl-btn danger" onclick="resetSim()">↺ RESET</button>
+      <div class="step-indicator" id="step-indicator">STEP 0 / 5</div>
+      <div class="step-progress"><div class="step-fill" id="step-fill" style="width:0%"></div></div>
+      <div class="speed-label">SPEED</div>
+      <input type="range" min="1" max="5" value="2" style="width:80px" id="speed-slider">
+      <button class="ctrl-btn" onclick="goPage('rec')" style="margin-left:auto;border-color:var(--green);color:var(--green)">→ RECOMMENDATION</button>
+    </div>
+
+    <div class="chart-panel" style="grid-column:1/-1">
+      <div class="panel-label">ENGINE PIPELINE OUTPUTS</div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+        <div style="border:1px solid var(--border);border-radius:3px;padding:10px;background:rgba(0,0,0,.25)">
+          <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--cyan);margin-bottom:6px">INPUT HANDLER</div>
+          <pre id="out-input-handler" style="margin:0;max-height:180px;overflow:auto;font-size:11px;color:var(--text-dim);font-family:var(--font-term)"></pre>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:3px;padding:10px;background:rgba(0,0,0,.25)">
+          <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--cyan);margin-bottom:6px">ORCHESTRATOR</div>
+          <pre id="out-orchestrator" style="margin:0;max-height:180px;overflow:auto;font-size:11px;color:var(--text-dim);font-family:var(--font-term)"></pre>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:3px;padding:10px;background:rgba(0,0,0,.25)">
+          <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--cyan);margin-bottom:6px">MARKET ANALYZER AGENT</div>
+          <pre id="out-market-agent" style="margin:0;max-height:180px;overflow:auto;font-size:11px;color:var(--text-dim);font-family:var(--font-term)"></pre>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:3px;padding:10px;background:rgba(0,0,0,.25)">
+          <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--cyan);margin-bottom:6px">SIMULATION LOOP</div>
+          <pre id="out-sim-loop" style="margin:0;max-height:180px;overflow:auto;font-size:11px;color:var(--text-dim);font-family:var(--font-term)"></pre>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:3px;padding:10px;background:rgba(0,0,0,.25)">
+          <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--cyan);margin-bottom:6px">EVALUATION ENGINE</div>
+          <pre id="out-eval" style="margin:0;max-height:180px;overflow:auto;font-size:11px;color:var(--text-dim);font-family:var(--font-term)"></pre>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:3px;padding:10px;background:rgba(0,0,0,.25)">
+          <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--cyan);margin-bottom:6px">RECOMMENDATION ENGINE</div>
+          <pre id="out-reco" style="margin:0;max-height:180px;overflow:auto;font-size:11px;color:var(--text-dim);font-family:var(--font-term)"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== RECOMMENDATION PAGE ====== -->
+<div class="page" id="page-rec">
+  <div class="rec-grid">
+    <div class="rec-hero">
+      <div style="font-family:var(--font-display);font-size:12px;letter-spacing:4px;color:var(--text-dim);margin-bottom:8px">// STRATEGY EVALUATION COMPLETE //</div>
+      <div class="rec-score-big" id="rec-score-big" style="color:var(--cyan);text-shadow:0 0 40px rgba(0,255,225,.4)">74</div>
+      <div class="rec-status">CURRENT STRATEGY SCORE &nbsp;/&nbsp; 100</div>
+    </div>
+
+    <!-- VARIANT CARDS -->
+    <div class="variant-card" onclick="selectVariant(this)">
+      <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-term);margin-bottom:8px">VARIANT A — -20%</div>
+      <div class="variant-price">₹2,400</div>
+      <div class="variant-score">Score: <span>78</span><span style="font-size:12px;color:var(--text-dim)">/100</span></div>
+      <div style="margin-top:12px;height:2px;background:var(--border);border-radius:1px"><div style="height:100%;width:78%;background:var(--cyan);border-radius:1px;transition:width 1s ease"></div></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:10px;font-family:var(--font-term)">Higher adoption, lower margin</div>
+    </div>
+
+    <div class="variant-card best" onclick="selectVariant(this)">
+      <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-term);margin-bottom:8px">VARIANT B — -10% ★</div>
+      <div class="variant-price">₹2,700</div>
+      <div class="variant-score">Score: <span style="color:var(--cyan)">82</span><span style="font-size:12px;color:var(--text-dim)">/100</span></div>
+      <div style="margin-top:12px;height:2px;background:var(--border);border-radius:1px"><div style="height:100%;width:82%;background:var(--cyan);border-radius:1px;transition:width 1s ease;box-shadow:0 0 8px var(--cyan)"></div></div>
+      <div style="font-size:11px;color:var(--green);margin-top:10px;font-family:var(--font-term)">▲ +8 pts over original — optimal balance</div>
+    </div>
+
+    <div class="variant-card" onclick="selectVariant(this)">
+      <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-term);margin-bottom:8px">VARIANT C — ORIGINAL</div>
+      <div class="variant-price">₹3,000</div>
+      <div class="variant-score">Score: <span>74</span><span style="font-size:12px;color:var(--text-dim)">/100</span></div>
+      <div style="margin-top:12px;height:2px;background:var(--border);border-radius:1px"><div style="height:100%;width:74%;background:var(--amber);border-radius:1px;transition:width 1s ease"></div></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:10px;font-family:var(--font-term)">Current strategy benchmark</div>
+    </div>
+
+    <div class="variant-card" onclick="selectVariant(this)">
+      <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-term);margin-bottom:8px">VARIANT D — +10%</div>
+      <div class="variant-price">₹3,300</div>
+      <div class="variant-score">Score: <span style="color:var(--red)">61</span><span style="font-size:12px;color:var(--text-dim)">/100</span></div>
+      <div style="margin-top:12px;height:2px;background:var(--border);border-radius:1px"><div style="height:100%;width:61%;background:var(--red);border-radius:1px;transition:width 1s ease"></div></div>
+      <div style="font-size:11px;color:var(--red);margin-top:10px;font-family:var(--font-term)">▼ Demand drops sharply at this price</div>
+    </div>
+
+    <!-- STRATEGY ADVICE -->
+    <div class="advice-panel">
+      <div class="advice-title">// AI STRATEGIC RECOMMENDATION</div>
+      <div class="advice-text" id="advice-text">
+        Reduce pricing to <span style="color:var(--amber)">₹2,700</span> immediately — the LPG crisis has created a <span style="color:var(--cyan)">3–6 month demand window</span> that competitors are starting to notice. At ₹2,700 you hit the sweet spot between middle-income affordability and margin health, giving you <span style="color:var(--green)">82% success probability</span> versus 74% at current pricing. Prestige Induction has already dropped ₹400 — moving fast on pricing before they stabilize their supply chain is your primary competitive lever.
+      </div>
+    </div>
+
+    <!-- MARKET BREAKDOWN -->
+    <div class="panel">
+      <div class="panel-label">MARKET CONTEXT</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:3px">
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--font-term)">DEMAND TREND</span>
+          <span style="font-size:12px;color:var(--green);font-family:var(--font-display);letter-spacing:2px">GROWING ▲</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:3px">
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--font-term)">COMPETITION</span>
+          <span style="font-size:12px;color:var(--red);font-family:var(--font-display);letter-spacing:2px">INTENSIFYING ▲</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:3px">
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--font-term)">INVESTOR SIGNAL</span>
+          <span style="font-size:12px;color:var(--purple);font-family:var(--font-display);letter-spacing:2px">BUY ★</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:3px">
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--font-term)">MARKET WINDOW</span>
+          <span style="font-size:12px;color:var(--amber);font-family:var(--font-display);letter-spacing:2px">3–6 MONTHS</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:3px">
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--font-term)">RISK FLAGS</span>
+          <span style="font-size:12px;color:var(--orange);font-family:var(--font-display);letter-spacing:2px">2 ACTIVE</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RISK FLAGS -->
+    <div class="panel">
+      <div class="panel-label">RISK FLAGS</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="padding:12px;background:rgba(255,43,86,.06);border:1px solid rgba(255,43,86,.25);border-radius:3px;border-left:3px solid var(--red)">
+          <div style="font-size:11px;color:var(--red);font-family:var(--font-display);letter-spacing:2px;margin-bottom:4px">⚠ COMPETITION ESCALATING</div>
+          <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-term)">Prestige Induction dropped ₹400 — price war likely. Margin pressure begins Step 3 onwards.</div>
+        </div>
+        <div style="padding:12px;background:rgba(255,187,0,.05);border:1px solid rgba(255,187,0,.2);border-radius:3px;border-left:3px solid var(--amber)">
+          <div style="font-size:11px;color:var(--amber);font-family:var(--font-display);letter-spacing:2px;margin-bottom:4px">⚠ DEMAND WINDOW LIMITED</div>
+          <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-term)">Surge tied to crisis — if LPG supply normalises in 3–6 months, demand reverts to baseline.</div>
+        </div>
+        <div style="padding:12px;background:rgba(0,255,136,.04);border:1px solid rgba(0,255,136,.15);border-radius:3px;border-left:3px solid var(--green)">
+          <div style="font-size:11px;color:var(--green);font-family:var(--font-display);letter-spacing:2px;margin-bottom:4px">✓ SUPPLY CHAIN ADVANTAGE</div>
+          <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-term)">Competitors also supply-constrained. Your existing inventory gives 2–3 week head start.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div style="grid-column:1/-1;display:flex;gap:12px;justify-content:center;padding-top:8px">
+      <button class="launch-btn" style="width:280px" onclick="goPage('setup')">↺ RUN NEW SIMULATION</button>
+      <button class="launch-btn" style="width:280px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);box-shadow:none" onclick="exportReport()">↓ EXPORT REPORT</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const API_BASE = window.location.origin;
+let chartInstance = null;
+let currentChartType = 'demand';
+let pipeline = null;
+let simData = { labels: [], demand: [], competition: [], confidence: [], risk: [], prices: [] };
+let currentStep = 0;
+let stepsMax = 0;
+let playing = false;
+let playInterval = null;
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, Number(v || 0)));
+}
+
+function pretty(obj) {
+  return JSON.stringify(obj, null, 2);
+}
+
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const nm = {'setup':'// SETUP','dashboard':'// WAR ROOM','rec':'// RECOMMENDATION'};
+  document.querySelectorAll('.nav-btn').forEach(b=>{if(b.textContent.trim()===nm[id])b.classList.add('active')});
+}
+
+function updatePrice(v){
+  document.getElementById('price-display').innerHTML = '₹' + parseInt(v, 10).toLocaleString('en-IN') + ' <span>INR</span>';
+}
+
+function selectScenario(id,text){
+  document.querySelectorAll('.scenario-box').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('in-scenario').value = text;
+}
+
+function getSelectedFeatures() {
+  return Array.from(document.querySelectorAll('#feature-tags .tag.active')).map((t) => t.textContent.trim());
+}
+
+function buildPayload() {
+  return {
+    input: {
+      product_name: document.getElementById('in-name').value.trim() || 'Untitled Product',
+      product_description: document.getElementById('in-desc').value.trim() || 'No description',
+      features: getSelectedFeatures().length ? getSelectedFeatures() : ['Core capability'],
+      price: Number(document.getElementById('price-slider').value || 3000),
+      pricing_strategy: document.getElementById('in-strategy').value,
+      target_audience: document.getElementById('in-audience').value,
+      market_scenario: document.getElementById('in-scenario').value.trim() || 'Stable Market',
+      region: document.getElementById('in-region').value,
+    },
+    num_steps: 5,
+  };
+}
+
+async function uploadAndParsePRD() {
+  const fileInput = document.getElementById('prd-upload');
+  const statusEl = document.getElementById('prd-status');
+  const confEl = document.getElementById('prd-confidence');
+  
+  if (!fileInput.files || !fileInput.files[0]) {
+    alert('Please select a PRD file first');
+    return;
+  }
+  
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  try {
+    statusEl.style.display = 'block';
+    document.getElementById('prd-status-text').textContent = '⏳ Parsing PRD with Gemini AI...';
+    
+    const response = await fetch(API_BASE + '/prd/parse', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || `HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Populate form fields with extracted data
+    document.getElementById('in-name').value = data.product_name || 'Untitled Product';
+    document.getElementById('in-desc').value = data.product_description || '';
+    document.getElementById('in-scenario').value = data.market_scenario || '';
+    document.getElementById('in-strategy').value = data.pricing_strategy || 'competitive';
+    document.getElementById('in-audience').value = data.target_audience || 'middle_income';
+    document.getElementById('in-region').value = data.region || 'IN';
+    
+    // Update price if extracted
+    if (data.price && data.price > 0) {
+      document.getElementById('price-slider').value = data.price;
+      updatePrice(data.price);
+    }
+    
+    // Update features
+    if (data.features && data.features.length) {
+      document.querySelectorAll('#feature-tags .tag').forEach(tag => tag.classList.remove('active'));
+      data.features.forEach(feature => {
+        const tagEl = Array.from(document.querySelectorAll('#feature-tags .tag')).find(t => 
+          t.textContent.trim().toLowerCase().includes(feature.toLowerCase())
+        );
+        if (tagEl) {
+          tagEl.classList.add('active');
+        } else {
+          // Create new tag if feature not found
+          const newTag = document.createElement('div');
+          newTag.className = 'tag active';
+          newTag.textContent = feature;
+          newTag.onclick = function() { this.classList.toggle('active'); };
+          document.getElementById('feature-tags').appendChild(newTag);
+        }
+      });
+    }
+    
+    // Show confidence
+    const confidence = Math.round((data.extraction_confidence || 0.8) * 100);
+    document.getElementById('prd-conf-value').textContent = confidence + '%';
+    confEl.style.display = 'block';
+    
+    // Show success message
+    document.getElementById('prd-status-text').textContent = 
+      `✅ PRD parsed successfully! ${data.warnings && data.warnings.length ? '⚠ ' + data.warnings[0] : ''}`;
+    document.getElementById('prd-status-text').style.color = 'var(--green)';
+    
+    // Scroll to form
+    setTimeout(() => {
+      document.getElementById('in-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 500);
+    
+  } catch (error) {
+    let errorMsg = error.message || 'Unknown error';
+    // Parse backend error detail if available
+    if (errorMsg.includes('API key') || errorMsg.includes('GOOGLE_API_KEY')) {
+      errorMsg = 'PRD parsing requires Gemini API key. Ask admin to configure GOOGLE_API_KEY environment variable.';
+    } else if (errorMsg.includes('503')) {
+      errorMsg = 'API service temporarily unavailable. Check server configuration.';
+    }
+    document.getElementById('prd-status-text').textContent = '❌ ' + errorMsg;
+    document.getElementById('prd-status-text').style.color = 'var(--red)';
+    statusEl.style.display = 'block';
+  }
+}
+
+async function postJson(path, payload) {
+  const response = await fetch(API_BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    let detail = 'request_failed';
+    try {
+      const body = await response.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      detail = 'http_' + response.status;
+    }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+function setLoading(visible, message, sub) {
+  const node = document.getElementById('loading');
+  node.classList.toggle('hidden', !visible);
+  if (message) document.getElementById('loading-text').textContent = message;
+  if (sub) document.getElementById('loading-sub').textContent = sub;
+}
+
+function appendLoadingLog(text) {
+  const logEl = document.getElementById('loading-log');
+  const entry = document.createElement('div');
+  entry.className = 'loading-log-entry';
+  entry.textContent = text;
+  logEl.appendChild(entry);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function mapPipelineToSeries(result) {
+  const history = result?.simulation_loop?.history || [];
+  simData = {
+    labels: history.map((h) => 'STEP ' + h.step),
+    demand: history.map((h) => clamp(h.demand, 0, 1)),
+    competition: history.map((h) => clamp(h.competition, 0, 1)),
+    confidence: history.map((h) => clamp(h.confidence, 0, 1)),
+    risk: history.map((h) => clamp(h.risk, 0, 1)),
+    prices: history.map((h) => Number(h.raw_price || 0)),
+  };
+  stepsMax = history.length;
+  currentStep = stepsMax > 0 ? 1 : 0;
+}
+
+function initChart(){
+  const canvas = document.getElementById('main-chart');
+  const ctx = canvas.getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+
+  const colors = {
+    demand: 'rgba(0,255,225,1)',
+    competition: 'rgba(255,107,43,1)',
+    confidence: 'rgba(179,136,255,1)',
+    risk: 'rgba(255,43,86,1)',
+  };
+  const bgColors = {
+    demand: 'rgba(0,255,225,0.08)',
+    competition: 'rgba(255,107,43,0.08)',
+    confidence: 'rgba(179,136,255,0.08)',
+    risk: 'rgba(255,43,86,0.08)',
+  };
+
+  const visibleCount = Math.max(0, currentStep);
+  const labels = simData.labels;
+  let datasets = [];
+
+  if (currentChartType === 'all') {
+    ['demand', 'competition', 'confidence', 'risk'].forEach((k) => {
+      datasets.push({
+        label: k.toUpperCase(),
+        data: simData[k].map((v, i) => (i < visibleCount ? Math.round(v * 100) : null)),
+        borderColor: colors[k],
+        backgroundColor: bgColors[k],
+        fill: false,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: colors[k],
+        borderWidth: 2,
+      });
+    });
+  } else {
+    const k = currentChartType;
+    datasets = [{
+      label: k.toUpperCase() + ' %',
+      data: simData[k].map((v, i) => (i < visibleCount ? Math.round(v * 100) : null)),
+      borderColor: colors[k],
+      backgroundColor: bgColors[k],
+      fill: true,
+      tension: 0.4,
+      pointRadius: 5,
+      pointBackgroundColor: colors[k],
+      borderWidth: 2.5,
+    }];
+  }
+
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      animation: { duration: 450 },
+      plugins: {
+        legend: {
+          display: currentChartType === 'all',
+          labels: { color: 'rgba(200,218,232,0.6)', font: { family: 'IBM Plex Mono', size: 11 }, boxWidth: 12 },
+        },
+        tooltip: {
+          backgroundColor: 'rgba(6,13,20,.95)',
+          borderColor: 'rgba(0,255,225,.2)',
+          borderWidth: 1,
+          titleColor: '#00ffe1',
+          bodyColor: '#c8dae8',
+          titleFont: { family: 'Orbitron', size: 11 },
+          bodyFont: { family: 'IBM Plex Mono', size: 12 },
+          callbacks: { label: (ctx) => ' ' + ctx.parsed.y + '%' },
+        },
+      },
+      scales: {
+        x: { grid: { color: 'rgba(26,58,92,.5)' }, ticks: { color: 'rgba(74,106,124,.8)', font: { family: 'Share Tech Mono', size: 11 } } },
+        y: { min: 0, max: 100, grid: { color: 'rgba(26,58,92,.5)' }, ticks: { color: 'rgba(74,106,124,.8)', font: { family: 'Share Tech Mono', size: 11 }, callback: (v) => v + '%' } },
+      },
+    },
+  });
+}
+
+function switchChart(type, el){
+  currentChartType = type;
+  document.querySelectorAll('.chart-tab').forEach((t) => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  initChart();
+}
+
+function updateKPIs(step){
+  if (!stepsMax) return;
+  const idx = clamp(step, 1, stepsMax) - 1;
+  const demandPct = Math.round(simData.demand[idx] * 100);
+  const compPct = Math.round(simData.competition[idx] * 100);
+  const confPct = Math.round(simData.confidence[idx] * 100);
+  const riskPct = Math.round(simData.risk[idx] * 100);
+
+  document.getElementById('kpi-demand').textContent = demandPct + '%';
+  document.getElementById('kpi-demand-bar').style.width = demandPct + '%';
+  document.getElementById('kpi-comp').textContent = compPct + '%';
+  document.getElementById('kpi-comp-bar').style.width = compPct + '%';
+  document.getElementById('kpi-conf').textContent = confPct + '%';
+  document.getElementById('kpi-conf-bar').style.width = confPct + '%';
+  document.getElementById('kpi-risk').textContent = riskPct + '%';
+  document.getElementById('kpi-risk-bar').style.width = riskPct + '%';
+  const price = Math.round(simData.prices[idx] || 0);
+  document.getElementById('kpi-price').textContent = '₹' + price.toLocaleString('en-IN');
+  document.getElementById('kpi-price-bar').style.width = Math.round((price / 15000) * 100) + '%';
+
+  const score = Math.round((0.4 * simData.demand[idx] + 0.3 * simData.confidence[idx] - 0.2 * simData.competition[idx] - 0.1 * simData.risk[idx]) * 100);
+  const scoreClamped = clamp(score, 0, 100);
+  document.getElementById('gauge-num').textContent = scoreClamped;
+  document.getElementById('gauge-arc').style.strokeDashoffset = 503 - (503 * (scoreClamped / 100));
+
+  const statusEl = document.getElementById('gauge-status');
+  if (scoreClamped >= 85) {
+    statusEl.textContent = 'HIGH POTENTIAL';
+    statusEl.style.color = 'var(--green)';
+    statusEl.style.borderColor = 'var(--green)';
+    statusEl.style.background = 'rgba(0,255,136,.08)';
+  } else if (scoreClamped >= 65) {
+    statusEl.textContent = 'MODERATE POTENTIAL';
+    statusEl.style.color = 'var(--cyan)';
+    statusEl.style.borderColor = 'var(--cyan)';
+    statusEl.style.background = 'rgba(0,255,225,.06)';
+  } else if (scoreClamped >= 45) {
+    statusEl.textContent = 'RISKY';
+    statusEl.style.color = 'var(--amber)';
+    statusEl.style.borderColor = 'var(--amber)';
+    statusEl.style.background = 'rgba(255,187,0,.08)';
+  } else {
+    statusEl.textContent = 'NOT RECOMMENDED';
+    statusEl.style.color = 'var(--red)';
+    statusEl.style.borderColor = 'var(--red)';
+    statusEl.style.background = 'rgba(255,43,86,.1)';
+  }
+
+  document.getElementById('step-indicator').textContent = 'STEP ' + step + ' / ' + stepsMax;
+  document.getElementById('step-fill').style.width = Math.round((step / stepsMax) * 100) + '%';
+}
+
+function appendLogEntry(entry) {
+  const stream = document.getElementById('log-stream');
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + entry.type;
+  div.innerHTML = '<span class="log-step">' + entry.step + '</span><div class="log-agent">' + entry.agent + '</div><div class="log-text">' + entry.text + '</div>';
+  stream.appendChild(div);
+}
+
+function renderLogs(step) {
+  const stream = document.getElementById('log-stream');
+  stream.innerHTML = '';
+  if (!pipeline) return;
+
+  const marketSummary = pipeline.market_analyzer_agent?.market_context?.summary || 'Market context unavailable.';
+  appendLogEntry({ type: 'market', agent: 'MARKET ANALYZER', text: marketSummary, step: 'INIT' });
+
+  const logs = pipeline.simulation_loop?.agent_logs || [];
+  logs.filter((l) => Number(l.step) <= step).forEach((l) => {
+    appendLogEntry({ type: 'customer', agent: 'CUSTOMER AGENT', text: l.customer?.reasoning || 'No customer reasoning.', step: 'S' + l.step });
+    appendLogEntry({ type: 'competitor', agent: 'COMPETITOR AGENT', text: 'Strategy: ' + (l.competitor?.strategy || 'n/a') + ' | Action: ' + (l.competitor?.action || 'n/a'), step: 'S' + l.step });
+    appendLogEntry({ type: 'investor', agent: 'INVESTOR AGENT', text: 'Verdict: ' + (l.investor?.verdict || 'n/a'), step: 'S' + l.step });
+  });
+
+  stream.scrollTop = stream.scrollHeight;
+}
+
+function renderCompetitors(step) {
+  const list = document.getElementById('competitor-list');
+  list.innerHTML = '';
+  const history = pipeline?.simulation_loop?.final_state?.competitor_history || [];
+  const rows = history.filter((h) => Number(h.step) <= step).slice(-5).reverse();
+  rows.forEach((h) => {
+    const comp = clamp(h.competition, 0, 1);
+    const threat = comp > 0.65 ? 'high' : comp > 0.4 ? 'med' : 'low';
+    const node = document.createElement('div');
+    node.className = 'comp-entry threat-' + threat;
+    node.innerHTML =
+      '<div class="comp-name">STEP ' + h.step + '<span class="threat-badge ' + threat + '">' + threat.toUpperCase() + ' THREAT</span></div>' +
+      '<div class="comp-action">' + (h.reasoning || 'No competitor reasoning.') + '</div>' +
+      '<div class="comp-bar-row"><div class="comp-bar-label">COMPETE</div><div class="comp-bar-bg"><div class="comp-bar-fill" style="width:' + Math.round(comp * 100) + '%;background:var(--orange)"></div></div></div>' +
+      '<div class="comp-bar-row"><div class="comp-bar-label">PRICE</div><div class="comp-bar-bg"><div class="comp-bar-fill" style="width:' + Math.round((Number(h.price || 0) / 15000) * 100) + '%;background:var(--amber)"></div></div></div>';
+    list.appendChild(node);
+  });
+}
+
+function renderHeatmap(){
+  const hm = document.getElementById('heatmap');
+  hm.innerHTML = '';
+  const maxCols = Math.max(5, stepsMax);
+  const labelsRow = document.querySelector('#heatmap').previousElementSibling;
+  labelsRow.innerHTML = '<div></div>' + Array.from({ length: maxCols }).map((_, i) => '<div style="text-align:center">STEP ' + (i + 1) + '</div>').join('');
+
+  const agents = [
+    { key: 'demand', label: 'CUSTOMER', color: '#4fc3f7' },
+    { key: 'competition', label: 'COMPETE', color: '#ff6b2b' },
+    { key: 'confidence', label: 'INVESTOR', color: '#b388ff' },
+  ];
+
+  agents.forEach((a) => {
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:10px;color:' + a.color + ';font-family:Orbitron;display:flex;align-items:center;letter-spacing:1px';
+    lbl.textContent = a.label;
+    hm.appendChild(lbl);
+
+    for (let i = 0; i < maxCols; i++) {
+      const val = i < stepsMax ? simData[a.key][i] : null;
+      const visible = i < currentStep;
+      const score = visible && val != null ? Math.round(val * 100) : null;
+      const alpha = score == null ? 0.05 : 0.15 + (score / 100) * 0.7;
+      const rgb = score == null ? '74,106,124' : score > 60 ? '0,255,136' : score > 40 ? '255,187,0' : '255,43,86';
+      const cell = document.createElement('div');
+      cell.style.cssText = 'border-radius:3px;height:32px;background:rgba(' + rgb + ',' + alpha + ');border:1px solid rgba(' + rgb + ',0.2);display:flex;align-items:center;justify-content:center;font-family:Orbitron;font-size:11px;color:rgba(' + rgb + ',1);transition:all .5s';
+      cell.textContent = score == null ? '—' : score + '%';
+      hm.appendChild(cell);
+    }
+  });
+}
+
+function renderPipelineOutputs() {
+  if (!pipeline) return;
+  document.getElementById('out-input-handler').textContent = pretty(pipeline.input_handler || {});
+  document.getElementById('out-orchestrator').textContent = pretty(pipeline.orchestrator || {});
+  document.getElementById('out-market-agent').textContent = pretty(pipeline.market_analyzer_agent || {});
+  document.getElementById('out-sim-loop').textContent = pretty({
+    history: pipeline.simulation_loop?.history || [],
+    agent_logs: pipeline.simulation_loop?.agent_logs || [],
+    final_state: pipeline.simulation_loop?.final_state || {},
+  });
+  document.getElementById('out-eval').textContent = pretty(pipeline.evaluation_engine || {});
+  document.getElementById('out-reco').textContent = pretty(pipeline.recommendation_engine || {});
+}
+
+function renderRecommendation() {
+  if (!pipeline) return;
+  const evalEngine = pipeline.evaluation_engine || {};
+  const reco = pipeline.recommendation_engine || {};
+  const score = Number(evalEngine.success_score || 0);
+  document.getElementById('rec-score-big').textContent = score;
+  document.getElementById('advice-text').textContent = reco.strategic_advice || 'No recommendation available.';
+
+  const cards = Array.from(document.querySelectorAll('#page-rec .variant-card'));
+  const rows = reco.comparison_table || [];
+  cards.forEach((card, i) => {
+    const row = rows[i];
+    if (!row) return;
+    const header = card.querySelector('div:nth-child(1)');
+    const price = card.querySelector('.variant-price');
+    const scoreLine = card.querySelector('.variant-score span');
+    const bar = card.querySelector('div[style*="height:100%"]');
+    if (header) header.textContent = row.label;
+    if (price) price.textContent = '₹' + Number(row.price).toLocaleString('en-IN');
+    if (scoreLine) scoreLine.textContent = row.score;
+    if (bar) bar.style.width = Math.round(Number(row.score || 0)) + '%';
+  });
+}
+
+function updateAll(step) {
+  updateKPIs(step);
+  initChart();
+  renderHeatmap();
+  renderLogs(step);
+  renderCompetitors(step);
+}
+
+function stepOnce(){
+  if (!stepsMax) return;
+  if (currentStep >= stepsMax) return;
+  currentStep += 1;
+  updateAll(currentStep);
+}
+
+function togglePlay(){
+  if (!stepsMax) return;
+  playing = !playing;
+  document.getElementById('play-btn').textContent = playing ? '⏸ PAUSE' : '▶ PLAY';
+  if (playing) {
+    const speeds = [0, 1400, 1000, 700, 450, 250];
+    const speed = speeds[Number(document.getElementById('speed-slider').value)] || 900;
+    playInterval = setInterval(() => {
+      if (currentStep >= stepsMax) {
+        clearInterval(playInterval);
+        playing = false;
+        document.getElementById('play-btn').textContent = '▶ PLAY';
+        return;
+      }
+      stepOnce();
+    }, speed);
+  } else {
+    clearInterval(playInterval);
+  }
+}
+
+function resetSim(){
+  playing = false;
+  clearInterval(playInterval);
+  document.getElementById('play-btn').textContent = '▶ PLAY';
+  currentStep = stepsMax > 0 ? 1 : 0;
+  updateAll(currentStep);
+}
+
+function injectCrisis(type){
+  const stream = document.getElementById('log-stream');
+  const div = document.createElement('div');
+  div.className = 'log-entry system';
+  div.innerHTML = '<span class="log-step">INJECT</span><div class="log-agent">SCENARIO INJECTOR</div><div class="log-text">Injected event: ' + type + '. Re-run simulation to apply this event to backend pipeline.</div>';
+  stream.appendChild(div);
+  stream.scrollTop = stream.scrollHeight;
+}
+
+async function launchSimulation(){
+  try {
+    document.getElementById('loading-log').innerHTML = '';
+    setLoading(true, 'RUNNING PIPELINE', 'Preparing request');
+    appendLoadingLog('Reading setup fields');
+    const payload = buildPayload();
+
+    appendLoadingLog('Input Handler started');
+    appendLoadingLog('Orchestrator started');
+    appendLoadingLog('Calling /pipeline/run');
+    pipeline = await postJson('/pipeline/run', payload);
+
+    appendLoadingLog('Simulation loop complete');
+    appendLoadingLog('Evaluation engine complete');
+    appendLoadingLog('Recommendation engine complete');
+
+    mapPipelineToSeries(pipeline);
+    renderPipelineOutputs();
+
+    const marketEvents = pipeline.market_analyzer_agent?.market_context?.key_events || [];
+    if (marketEvents.length) {
+      document.getElementById('ticker-text').textContent = marketEvents.join(' | ') + ' | ' + marketEvents.join(' | ');
+    }
+
+    updateAll(currentStep || 1);
+    renderRecommendation();
+    goPage('dashboard');
+  } catch (error) {
+    alert('Simulation failed: ' + (error.message || error));
+  } finally {
+    setTimeout(() => setLoading(false), 250);
+  }
+}
+
+function selectVariant(card){
+  document.querySelectorAll('.variant-card').forEach((c) => c.style.borderColor = '');
+  card.style.borderColor = 'var(--cyan)';
+}
+
+function exportReport(){
+  if (!pipeline) {
+    alert('Run a simulation first.');
+    return;
+  }
+  const blob = new Blob([pretty(pipeline)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'warroom-pipeline-report.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+window.onload = () => {
+  document.querySelectorAll('.tag').forEach((t) => t.onclick = () => t.classList.toggle('active'));
+  document.querySelectorAll('.agent-card').forEach((c) => c.onclick = function(){ this.classList.toggle('on'); });
+  initChart();
+  renderHeatmap();
+};
+</script>
+</body>
+</html>

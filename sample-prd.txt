@@ -1,0 +1,49 @@
+# Product Requirements Document: AI-Powered Smart Oven
+
+## Executive Summary
+A revolutionary kitchen appliance targeting middle-income households and premium segments. The AI Smart Oven combines traditional cooking functionality with AI-powered temperature management and recipe optimization.
+
+## Product Name
+AI Smart Oven Pro
+
+## Product Description
+An intelligent kitchen appliance that uses AI and IoT sensors to automatically adjust cooking temperature, time, and power levels based on the type of food being prepared. Features cloud connectivity for recipe recommendations and cooking progress monitoring via mobile app.
+
+## Key Features
+- AI Temperature Auto-Adjustment
+- Cloud-Connected Recipe Library
+- Real-time Cooking Progress Monitoring
+- Multi-Zone Heating
+- Smart Timer with Notifications
+- Mobile App Integration
+- Energy Efficiency Mode
+- Voice Control Compatible
+
+## Pricing
+Expected base price point: ₹12,500
+Position as premium within mid-range segment
+
+## Pricing Strategy
+Premium positioning with value emphasis - customers willing to pay more for smart features
+
+## Target Market
+Primary: Middle-income professionals (₹40K-80K monthly income)
+Secondary: Premium customer segment looking for kitchen innovation
+
+## Geographic Market
+India, focusing on urban metros (Delhi, Mumbai, Bangalore, Chennai)
+
+## Market Scenario
+Growing demand for smart home appliances in India. Rising smartphone penetration (85% in metros) creates opportunity for IoT-enabled products. Competition from international brands (Samsung, LG) intensifying. Manufacturing costs declining with local assembly options improving unit economics.
+
+## Competitive Landscape
+- Prestige Electric (entry-level ovens, ₹5K-8K)
+- IFB (mid-range, ₹8K-15K)
+- Samsung Smart Oven (premium, ₹25K+)
+- Local startups entering smart appliance space
+
+## Risk Factors
+- Supply chain complexity for IoT components
+- Customer education needed on smart features
+- Price sensitivity in Indian market
+- After-sales service infrastructure requirements
