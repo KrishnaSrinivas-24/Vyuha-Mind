@@ -75,3 +75,10 @@ The market agent auto-selects suitable sources based on orchestrator task contex
 - If ENABLE_ADK_AGENTS is false or GOOGLE_API_KEY is missing, the simulator automatically uses deterministic fallback logic.
 - If GROK_API_KEY is missing or Grok request fails, market analysis safely falls back.
 - ADK mode is optional and can be turned on without changing code.
+
+## 📂 Project Assets & Resources
+
+- **Google Drive (Project Assets & PPTs):** [Access Folder](https://drive.google.com/drive/folders/1ES2mXXCWrBqfzyGqjR9yEwTbyqSp_JD8?usp=sharing)
+- **Official Pitch Deck:** [Final_AI_Simulator_Pitch_Deck.pptx](Final_AI_Simulator_Pitch_Deck.pptx)
+- **Architecture Flowcharts:** Included in the Pitch Deck.
+- **GitHub Repository:** [Vyuha-Mind](https://github.com/KrishnaSrinivas-24/Vyuha-Mind.git)
